@@ -202,6 +202,7 @@ if __name__ == "__main__":
 
     print("--- Step 2: Compute features ---")
     df = compute_features(raw_data)
+    print(df)
 
     print("--- Step 3: Resolve Hopsworks IDs ---")
     project_id = get_hopsworks_project_id()
