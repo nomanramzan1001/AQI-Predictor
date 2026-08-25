@@ -91,10 +91,10 @@ def store_data_in_hopsworks(df):
         version = FEATURE_GROUP_VERSION,
         description = "AQI Features for Pattoki fetched from Open-Meteo",
         primary_key = ["timestamp", "city"],
-        #time_travel_format = "HUDI"
+        time_travel_format = "HUDI"
     )
 
-    fg.insert(df, write_options={"kafka_timeout" : 60})
+    fg.insert(df)
 
     print(f"Stored {len(df)} records successfully.") 
 
