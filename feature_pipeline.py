@@ -54,6 +54,28 @@ def compute_features(data : dict) -> pd.DataFrame:
 
     aqi = int(current.get('us_aqi' , 0))
 
+    project = hopsworks.login(
+        api_key_value=HOPSWORKS_API_KEY,
+        host="eu-west.cloud.hopsworks.ai",
+        project=HOPSWORKS_PROJECT_NAME
+    )
+
+    # Access the feature store
+    fs = project.get_feature_store()
+
+    # Example: Read an existing feature group
+    fg = fs.get_feature_group(
+        name=FEATURE_GROUP_NAME,
+        version=1
+    )
+
+    # Read data from the feature group
+    df = fg.read()
+    
+    last_row = df.iloc[-1]
+
+    pre_aqi = last_row["us_aqi"]
+
     row = {
         "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
         "city": CITY_NAME,
@@ -68,7 +90,7 @@ def compute_features(data : dict) -> pd.DataFrame:
         "ozone": float(current.get("ozone", 0) or 0),
         "sulphur_dioxide": float(current.get("sulphur_dioxide", 0) or 0),
         "us_aqi": aqi,
-        "aqi_change_rate": 0
+        "aqi_change_rate": int(aqi-pre_aqi)
     }
 
     df = pd.DataFrame([row])
@@ -152,7 +174,7 @@ def get_feature_group_id(project_id : int , feature_store_id : int) -> int:
 # Insert features into the Hopsworks
 # ---------------------------------------------------------------------------
 
-def insert_features(df: pd.DataFrame, project_id: int, fs_id: int, fg_id: int):
+def insert_features(df: pd.DataFrame):
     project = hopsworks.login(
         api_key_value=HOPSWORKS_API_KEY,
         host="eu-west.cloud.hopsworks.ai",
@@ -169,13 +191,7 @@ def insert_features(df: pd.DataFrame, project_id: int, fs_id: int, fg_id: int):
     print(f"Feature group type: {type(fg).__name__}")
 
     print("Inserting row...")
-    fg.insert(
-        df,
-        write_options={
-            "kafka_timeout": 30,      # fail fast instead of hanging for minutes
-            "wait_for_job": False,    # don't poll the background Hudi job
-        },
-    )
+    fg.insert(df)
     print("Insert complete.")
 
 
@@ -186,7 +202,6 @@ if __name__ == "__main__":
 
     print("--- Step 2: Compute features ---")
     df = compute_features(raw_data)
-    print(df.to_string(index=False))
 
     print("--- Step 3: Resolve Hopsworks IDs ---")
     project_id = get_hopsworks_project_id()
@@ -194,6 +209,8 @@ if __name__ == "__main__":
     fg_id = get_feature_group_id(project_id, fs_id)
 
     print("--- Step 4: Insert ---")
-    insert_features(df, project_id, fs_id, fg_id)
+    insert_features(df)
 
     print("Done!")
+
+
