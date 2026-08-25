@@ -89,7 +89,7 @@ def store_data_in_hopsworks(df):
     fg = fs.get_or_create_feature_group(
         name = FEATURE_GROUP_NAME, #The name of the group to create ot retrieve
         version = FEATURE_GROUP_VERSION,
-        description = "AQI Features for Pattoki fetched from Open-Meteo",
+        description = "AQI Features for Lahore fetched from Open-Meteo",
         primary_key = ["timestamp", "city"],
         time_travel_format = "HUDI"
     )
