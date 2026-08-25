@@ -15,9 +15,8 @@ load_dotenv()
 
 HOPSWORKS_API_KEY = os.getenv("HOPSWORKS_API_KEY")
 HOPSWORKS_PROJECT_NAME = os.getenv("HOPSWORKS_PROJECT_NAME")
-
-FEATURE_GROUP_NAME = "aqi_predictor"
-FEATURE_GROUP_VERSION = 0
+FEATURE_GROUP_NAME = os.getenv("FEATURE_GROUP_NAME")
+FEATURE_GROUP_VERSION = os.getenv("FEATURE_GROUP_VERSION")
 
 LATITUDE = 31.5204
 LONGITUDE = 74.3587
@@ -35,7 +34,7 @@ def fetch_raw_data() -> dict:
         "current": [
             "pm10", "pm2_5", "carbon_monoxide",
             "nitrogen_dioxide", "ozone", "sulphur_dioxide",
-            "us_aqi", "european_aqi",
+            "us_aqi",
         ],
     }
     response = requests.get(url, params = params, timeout = 60)
@@ -69,7 +68,7 @@ def compute_features(data : dict) -> pd.DataFrame:
         "ozone": float(current.get("ozone", 0) or 0),
         "sulphur_dioxide": float(current.get("sulphur_dioxide", 0) or 0),
         "us_aqi": aqi,
-        "european_aqi": int(current.get("european_aqi", 0) or 0),
+        "aqi_change_rate": 0
     }
 
     df = pd.DataFrame([row])
@@ -132,14 +131,69 @@ def get_feature_store_id(project_id : int) -> int:
 
 def get_feature_group_id(project_id : int , feature_store_id : int) -> int:
 
-    response = requests.get(
-        f"https://eu-west.cloud.hopsworks.ai/hopsworks-api/api/project/{project_id}/featurestores/{feature_store_id}"
-        f"/featuregroups/{FEATURE_GROUP_NAME}",
+    resp = requests.get(
+        f"https://eu-west.cloud.hopsworks.ai/hopsworks-api/api/project/{project_id}/featurestores/{feature_store_id}/featuregroups/{FEATURE_GROUP_NAME}",
         headers=headers,
-        #params={"version": FEATURE_GROUP_VERSION},
+        params={"version": FEATURE_GROUP_VERSION},
         timeout=30,
     )
 
-    print(response.json())
+    resp.raise_for_status()
 
-get_feature_group_id(41189, 30896)
+    response = resp.json()
+
+    fg_id = response[0]["id"]
+
+    print(f"feature_group_id = {fg_id}")
+
+    return fg_id
+
+# ---------------------------------------------------------------------------
+# Insert features into the Hopsworks
+# ---------------------------------------------------------------------------
+
+def insert_features(df: pd.DataFrame, project_id: int, fs_id: int, fg_id: int):
+    project = hopsworks.login(
+        api_key_value=HOPSWORKS_API_KEY,
+        host="eu-west.cloud.hopsworks.ai",
+        project=HOPSWORKS_PROJECT_NAME
+    )
+
+    fs = project.get_feature_store()
+
+    fg = fs.get_feature_group(
+        name=FEATURE_GROUP_NAME,
+        version=FEATURE_GROUP_VERSION
+    )
+
+    print(f"Feature group type: {type(fg).__name__}")
+
+    print("Inserting row...")
+    fg.insert(
+        df,
+        write_options={
+            "kafka_timeout": 30,      # fail fast instead of hanging for minutes
+            "wait_for_job": False,    # don't poll the background Hudi job
+        },
+    )
+    print("Insert complete.")
+
+
+if __name__ == "__main__":
+    print("--- Step 1: Fetch AQI data ---")
+    raw_data = fetch_raw_data()
+    print("Fetched.")
+
+    print("--- Step 2: Compute features ---")
+    df = compute_features(raw_data)
+    print(df.to_string(index=False))
+
+    print("--- Step 3: Resolve Hopsworks IDs ---")
+    project_id = get_hopsworks_project_id()
+    fs_id = get_feature_store_id(project_id)
+    fg_id = get_feature_group_id(project_id, fs_id)
+
+    print("--- Step 4: Insert ---")
+    insert_features(df, project_id, fs_id, fg_id)
+
+    print("Done!")
