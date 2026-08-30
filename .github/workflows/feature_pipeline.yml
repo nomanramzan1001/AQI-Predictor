@@ -1,0 +1,107 @@
+# =============================================================================
+# Feature Pipeline — scheduled ingestion of live AQI data into Hopsworks
+# =============================================================================
+# Script: feature_pipeline.py (fetches Open-Meteo current data → feature store)
+# Schedule: every hour (UTC)
+#
+# Required GitHub Secrets (Settings → Secrets and variables → Actions):
+#   HOPSWORKS_API_KEY
+#   HOPSWORKS_PROJECT_NAME
+#   EATURE_GROUP_NAME
+#   FEATURE_GROUP_VERSION
+# =============================================================================
+
+name: Feature Pipeline
+
+on:
+  # Run at the start of every hour (UTC)
+  schedule:
+    - cron: "0 * * * *"
+
+  # Allow manual runs from the GitHub Actions UI
+  workflow_dispatch:
+
+# Prevent overlapping hourly runs if a job is still in progress
+concurrency:
+  group: feature-pipeline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ingest-features:
+    name: Ingest current AQI features
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Read-only access to repository contents
+    permissions:
+      contents: read
+
+    steps:
+      # -----------------------------------------------------------------------
+      # Checkout source code
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # Python 3.12 runtime
+      # -----------------------------------------------------------------------
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # -----------------------------------------------------------------------
+      # Dependencies (production: pin via requirements.txt)
+      # -----------------------------------------------------------------------
+      - name: Upgrade pip and install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # -----------------------------------------------------------------------
+      # Validate secrets before calling external APIs
+      # -----------------------------------------------------------------------
+      - name: Validate required secrets
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+          FEATURE_GROUP_NAME: ${{ secrets.FEATURE_GROUP_NAME }}
+          FEATURE_GROUP_VERSION: ${{ secrets.FEATURE_GROUP_VERSION }}
+        run: |
+          set -euo pipefail
+          missing=0
+          if [ -z "${HOPSWORKS_API_KEY:-}" ]; then
+            echo "::error::GitHub secret HOPSWORKS_API_KEY is not set."
+            missing=1
+          fi
+          if [ -z "${HOPSWORKS_PROJECT_NAME:-}" ]; then
+            echo "::error::GitHub secret HOPSWORKS_PROJECT_NAME is not set."
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          echo "Required secrets are present."
+
+      # -----------------------------------------------------------------------
+      # Run feature pipeline (Open-Meteo → Hopsworks Feature Store)
+      # -----------------------------------------------------------------------
+      - name: Run feature_pipeline.py
+        env:
+          # Required — from GitHub Secrets (never commit keys to the repo)
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT_NAME: ${{ secrets.HOPSWORKS_PROJECT_NAME }}
+          FEATURE_GROUP_NAME: ${{ secrets.FEATURE_GROUP_NAME }}
+          FEATURE_GROUP_VERSION: ${{ secrets.FEATURE_GROUP_VERSION }}
+        run: |
+          set -euo pipefail
+          # Optional overrides: set only if you added matching repository secrets
+          [ -n "${{ secrets.FEATURE_GROUP_NAME }}" ] && export FEATURE_GROUP_NAME="${{ secrets.FEATURE_GROUP_NAME }}"
+          [ -n "${{ secrets.FEATURE_GROUP_VERSION }}" ] && export FEATURE_GROUP_VERSION="${{ secrets.FEATURE_GROUP_VERSION }}"
+          [ -n "${{ secrets.LATITUDE }}" ] && export LATITUDE="${{ secrets.LATITUDE }}"
+          [ -n "${{ secrets.LONGITUDE }}" ] && export LONGITUDE="${{ secrets.LONGITUDE }}"
+          [ -n "${{ secrets.CITY_NAME }}" ] && export CITY_NAME="${{ secrets.CITY_NAME }}"
+          python feature_pipeline.py
