@@ -1,0 +1,5 @@
+# Model explainability (install after requirements.txt)
+# Windows: if full requirements.txt fails on twofish, run only:
+#   pip install -r requirements-explain.txt
+shap>=0.44
+lime>=0.2.0.1
