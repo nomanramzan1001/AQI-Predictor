@@ -206,14 +206,14 @@ if __name__ == "__main__":
     print("\nTraining models...")
     model, model_name, metrics_report, X_train, X_test = train_ml_models(df)
 
-    # print("\nComputing SHAP and LIME explanations...")
-    # try:
-    #     metrics_report["explainability"] = build_explainability_report(
-    #         model, X_train, X_test, x_instance=df.dropna().iloc[-1]
-    #     )
-    #     print("  → SHAP and LIME summaries saved in metrics.json")
-    # except Exception as exc:
-    #     print(f"  → Explainability skipped: {exc}")
+    print("\nComputing SHAP and LIME explanations...")
+    try:
+        metrics_report["explainability"] = build_explainability_report(
+            model, X_train, X_test, x_instance=df.dropna().iloc[-1]
+        )
+        print("  → SHAP and LIME summaries saved in metrics.json")
+    except Exception as exc:
+        print(f"  → Explainability skipped: {exc}")
 
     clean = df.dropna()
     metrics_report["trained_at"] = datetime.now(timezone.utc).isoformat()
