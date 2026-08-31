@@ -25,7 +25,7 @@ LONGITUDE = 74.3587
 CITY_NAME = "LAHORE"
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, "..", ".."))
+PROJECT_ROOT = os.path.abspath(os.path.join(APP_DIR, ".."))
 LOCAL_MODEL_DIR = os.path.join(PROJECT_ROOT, "model")
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
@@ -1083,7 +1083,7 @@ def get_current_aqi():
     params = {
         "latitude": LATITUDE, "longitude": LONGITUDE,
         "current": ["pm10","pm2_5","carbon_monoxide","nitrogen_dioxide",
-                    "ozone","sulphur_dioxide","us_aqi","european_aqi"]
+                    "ozone","sulphur_dioxide","us_aqi"]
     }
     r = requests.get(url, params=params, timeout=10)
     return r.json()["current"]
@@ -1097,7 +1097,7 @@ def get_hourly_aqi_forecast():
         "longitude": LONGITUDE,
         "hourly": [
             "pm10", "pm2_5", "carbon_monoxide", "nitrogen_dioxide",
-            "ozone", "sulphur_dioxide", "us_aqi", "european_aqi",
+            "ozone", "sulphur_dioxide", "us_aqi",
         ],
         "forecast_days": 5,
         "timezone": "auto",
@@ -1241,7 +1241,7 @@ with st.sidebar:
         load_model_and_project.clear()
         st.rerun()
 
-    page = st.radio("", [
+    page = st.radio("Navigation", [
         "⊞  Overview",
         "⏱  Hourly AQI",
         "📅  Daily AQI",
@@ -2285,8 +2285,8 @@ elif "History" in page:
 
     display_df = df.sort_values(sort_col, ascending=False).head(n_rows).copy()
     display_df["timestamp"] = display_df["timestamp"].dt.strftime("%Y-%m-%d %H:%M")
-    display_df = display_df[["timestamp","us_aqi","european_aqi","pm2_5","pm10","ozone","nitrogen_dioxide","carbon_monoxide","sulphur_dioxide","aqi_change_rate"]]
-    display_df.columns = ["Timestamp","US AQI","EU AQI","PM2.5","PM10","O₃","NO₂","CO","SO₂","AQI Δ Rate"]
+    display_df = display_df[["timestamp","us_aqi","pm2_5","pm10","ozone","nitrogen_dioxide","carbon_monoxide","sulphur_dioxide","aqi_change_rate"]]
+    display_df.columns = ["Timestamp","US AQI","PM2.5","PM10","O₃","NO₂","CO","SO₂","AQI Δ Rate"]
 
     st.dataframe(display_df, use_container_width=True, hide_index=True)
     st.caption(f"Showing {n_rows} of {len(df)} total records from Hopsworks Feature Store")
