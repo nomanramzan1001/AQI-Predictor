@@ -191,7 +191,7 @@ def insert_features(df: pd.DataFrame):
     print(f"Feature group type: {type(fg).__name__}")
 
     print("Inserting row...")
-    fg.insert(df)
+    fg.insert(df , write_options={"start_offline_materialization": False})
     print("Insert complete.")
 
 
