@@ -1534,7 +1534,7 @@ if "Overview" in page:
         <div style="background:#0d1120;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:1.1rem 1.25rem;margin-bottom:1rem;">
           <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.85rem;">
             <div>
-              <div style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:#b8c5dc;text-transform:uppercase;margin-bottom:.35rem;">Models evaluated (5)</div>
+              <div style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.1em;color:#b8c5dc;text-transform:uppercase;margin-bottom:.35rem;">Models evaluated (7)</div>
               <div>{model_chips}</div>
             </div>
             <div style="text-align:right;min-width:200px;">
@@ -1573,7 +1573,7 @@ if "Overview" in page:
     else:
         st.markdown("""
         <div style="background:#111826;border:1px solid rgba(245,197,24,0.2);border-radius:12px;padding:.85rem 1rem;color:#f5c518;font-size:.85rem;">
-          Model comparison not loaded. Run <code style="color:#00e0aa;">python training_pipeline.py</code> and refresh to see which of the 5 models achieved the best accuracy.
+          Model comparison not loaded. Run <code style="color:#00e0aa;">python training_pipeline.py</code> and refresh to see which of the 7 models achieved the best accuracy.
         </div>
         """, unsafe_allow_html=True)
 
@@ -2136,7 +2136,7 @@ elif "Model" in page:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown('<div class="sec-lbl" style="margin-top:1rem;">Model comparison (5 models)</div>', unsafe_allow_html=True)
+            st.markdown('<div class="sec-lbl" style="margin-top:1rem;">Model comparison (7 models)</div>', unsafe_allow_html=True)
             names = [m["display_name"] for m in model_metrics["models"].values()]
             r2_vals = [m["r2_pct"] for m in model_metrics["models"].values()]
             fig2 = go.Figure(go.Bar(
@@ -2214,7 +2214,7 @@ elif "Model" in page:
         fig3.update_layout(**layout3)
         st.plotly_chart(fig3, use_container_width=True)
     else:
-        st.warning("Run `python training_pipeline.py` to train 5 models and save metrics.json to the model registry.")
+        st.warning("Run `python training_pipeline.py` to train 7 models and save metrics.json to the model registry.")
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("R² Score", "—", "Retrain required")
         c2.metric("RMSE", "—", "Retrain required")
