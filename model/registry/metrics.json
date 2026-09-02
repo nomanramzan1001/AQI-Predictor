@@ -1,58 +1,58 @@
 {
-    "best_model": "xgboost",
-    "best_model_display_name": "XGBRegressor",
+    "best_model": "extra_trees",
+    "best_model_display_name": "Extra Trees",
     "models": {
         "random_forest": {
             "display_name": "Random Forest",
-            "rmse": 13.85,
-            "mae": 9.43,
-            "r2": 0.9184,
-            "r2_pct": 91.8
+            "rmse": 14.04,
+            "mae": 9.66,
+            "r2": 0.9151,
+            "r2_pct": 91.5
         },
         "ridge": {
             "display_name": "Ridge Regression",
-            "rmse": 27.45,
-            "mae": 21.12,
-            "r2": 0.6794,
-            "r2_pct": 67.9
+            "rmse": 27.19,
+            "mae": 20.98,
+            "r2": 0.6819,
+            "r2_pct": 68.2
         },
         "gradient_boosting": {
             "display_name": "Gradient Boosting",
-            "rmse": 18.63,
-            "mae": 13.81,
-            "r2": 0.8523,
-            "r2_pct": 85.2
+            "rmse": 18.74,
+            "mae": 14.11,
+            "r2": 0.8488,
+            "r2_pct": 84.9
         },
         "extra_trees": {
             "display_name": "Extra Trees",
-            "rmse": 12.33,
+            "rmse": 12.07,
             "mae": 8.18,
-            "r2": 0.9354,
-            "r2_pct": 93.5
+            "r2": 0.9373,
+            "r2_pct": 93.7
         },
         "knn": {
             "display_name": "K-Nearest Neighbors",
-            "rmse": 27.2,
-            "mae": 20.22,
-            "r2": 0.6852,
-            "r2_pct": 68.5
+            "rmse": 26.41,
+            "mae": 19.84,
+            "r2": 0.6997,
+            "r2_pct": 70.0
         },
         "xgboost": {
             "display_name": "XGBRegressor",
-            "rmse": 11.74,
-            "mae": 8.36,
-            "r2": 0.9414,
-            "r2_pct": 94.1
+            "rmse": 12.18,
+            "mae": 8.74,
+            "r2": 0.9361,
+            "r2_pct": 93.6
         },
         "catboost": {
             "display_name": "CatBoost",
-            "rmse": 14.14,
-            "mae": 10.63,
-            "r2": 0.9149,
-            "r2_pct": 91.5
+            "rmse": 14.63,
+            "mae": 10.98,
+            "r2": 0.9079,
+            "r2_pct": 90.8
         }
     },
-    "trained_at": "2026-08-27T18:33:40.899516+00:00",
-    "data_through": "2026-08-25T23:00:00",
-    "total_samples": 8789
+    "trained_at": "2026-09-02T18:03:45.263312+00:00",
+    "data_through": "2026-09-01T14:18:30",
+    "total_samples": 8795
 }
