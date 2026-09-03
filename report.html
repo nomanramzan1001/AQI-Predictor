@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AQI-Predictor — Project Report</title>
+  <style>
+    :root {
+      --bg: #07090f;
+      --surface: #0d1120;
+      --surface2: #111826;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #d8e2f5;
+      --muted: #5e7292;
+      --accent: #00e0aa;
+      --accent2: #4f8ef7;
+      --warn: #f5c518;
+      --danger: #f87171;
+      --good: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+    /* Cover */
+    .cover {
+      background: linear-gradient(135deg, #0d1120 0%, #111826 50%, #0a1628 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3rem 2.5rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover::before {
+      content: "";
+      position: absolute;
+      top: -40%;
+      right: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(0,224,170,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cover-tag {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    .cover h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.6rem;
+    }
+    .cover h1 span { color: var(--accent); }
+    .cover-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 640px;
+      margin-bottom: 1.5rem;
+    }
+    .cover-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .cover-meta a { color: var(--accent2); text-decoration: none; }
+    .cover-meta a:hover { text-decoration: underline; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* KPI cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .kpi-val {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .kpi-val small { font-size: 1rem; color: var(--muted); font-weight: 500; }
+    .kpi-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 0.4rem;
+    }
+
+    /* Sections */
+    section { margin-bottom: 2.75rem; }
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--accent);
+    }
+    h3 { font-size: 1.05rem; margin: 1.25rem 0 0.65rem; color: var(--text); }
+    p { margin-bottom: 0.85rem; color: #b8c5dc; }
+    ul, ol { margin: 0 0 1rem 1.25rem; color: #b8c5dc; }
+    li { margin-bottom: 0.35rem; }
+    code {
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 0.86em;
+      background: var(--surface2);
+      padding: 0.15rem 0.45rem;
+      border-radius: 5px;
+      color: var(--accent);
+    }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      margin: 1rem 0;
+      color: #9eb4d4;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 1rem 0;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.85rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    .winner { color: var(--accent); font-weight: 600; }
+
+    /* Bar charts */
+    .bar-chart { margin: 1.25rem 0; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 60px;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.55rem;
+      font-size: 0.85rem;
+    }
+    .bar-label { color: #b8c5dc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-track {
+      height: 22px;
+      background: var(--surface2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transition: width 0.4s ease;
+    }
+    .bar-fill.best { background: linear-gradient(90deg, #00b894, var(--accent)); }
+    .bar-val { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    /* Architecture */
+    .diagram {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: center;
+      margin: 1.25rem 0;
+    }
+    .node {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.82rem;
+      text-align: center;
+      min-width: 110px;
+    }
+    .node.primary { border-color: rgba(0,224,170,0.35); color: var(--accent); }
+    .node.api { border-color: rgba(79,142,247,0.35); color: var(--accent2); }
+    .arrow { color: var(--muted); font-size: 1.1rem; }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem 1.2rem;
+    }
+    .card h4 { margin: 0 0 0.4rem; color: var(--accent); font-size: 0.95rem; }
+    .card p { margin: 0; font-size: 0.86rem; }
+
+    .flow {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      font-family: "Cascadia Code", Consolas, monospace;
+      font-size: 0.76rem;
+      line-height: 1.45;
+      color: #8fa8c8;
+      white-space: pre;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 720px) {
+      .two-col { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 100px 1fr 50px; }
+    }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media print {
+      body { background: #fff; color: #111; }
+      .cover { background: #f5f5f5; border-color: #ccc; }
+      .kpi, .card, pre, .flow { border-color: #ccc; background: #f9f9f9; }
+      .bar-fill { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- COVER -->
+    <header class="cover">
+      <div class="cover-tag">Project Report · June 2026</div>
+      <h1>AQI<span>Predictor</span></h1>
+      <p class="cover-sub">
+        End-to-end air quality monitoring and 7-day AQI forecasting for
+        <strong>Lahore, Pakistan</strong>. Ingests live pollution data from Open-Meteo,
+        stores engineered features in Hopsworks, trains seven regression models,
+        and serves predictions through an interactive Streamlit dashboard.
+      </p>
+      <div class="cover-meta">
+        <span>📍 31.5204°N, 74.3587°E</span>
+        <span>🌐 <a href="https://maida-aqi-predictor.streamlit.app/" target="_blank" rel="noopener">Live Dashboard</a></span>
+        <span>📄 <a href="docs/index.html">Full Documentation</a></span>
+      </div>
+      <div class="badge-row">
+        <span class="badge">Python 3.12</span>
+        <span class="badge">Streamlit</span>
+        <span class="badge">Hopsworks 4.7</span>
+        <span class="badge">scikit-learn</span>
+        <span class="badge">Open-Meteo</span>
+        <span class="badge">GitHub Actions</span>
+        <span class="badge">SHAP / LIME</span>
+      </div>
+    </header>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-val">93.8<small>%</small></div>
+        <div class="kpi-label">Best Model R²</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">12.00</div>
+        <div class="kpi-label">Best RMSE (AQI pts)</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">8,795</div>
+        <div class="kpi-label">Training Records</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">7</div>
+        <div class="kpi-label">Models Compared</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">10</div>
+        <div class="kpi-label">Dashboard Pages</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">7</div>
+        <div class="kpi-label">Day Forecast Horizon</div>
+      </div>
+    </div>
+
+    <!-- EXECUTIVE SUMMARY -->
+    <section id="summary">
+      <h2>1. Executive Summary</h2>
+      <p>
+        <strong>AQI-Predictor</strong> is a production-style machine learning pipeline that monitors
+        and forecasts the US Air Quality Index (AQI) for Lahore. The system pulls hourly pollution
+        readings from the free Open-Meteo Air Quality API, engineers features, and
+        persists them in the <strong>Hopsworks Feature Store</strong>. A daily training job compares
+        seven scikit-learn regressors and registers the best performer in the Hopsworks Model Registry.
+      </p>
+      <p>
+        The winning model — <strong>XGBRegressor</strong> — achieves <strong>93.8% R²</strong> on a
+        held-out test set of 1,759 samples (RMSE 12.00, MAE 8.54). Predictions and live data are
+        presented in a dark-themed Streamlit dashboard with 10 interactive views, including
+        7-day forecasts, pollutant breakdowns, model comparison, and health guidance.
+      </p>
+      <p>
+        Automation is handled by <strong>GitHub Actions</strong>: hourly feature ingestion and daily
+        model retraining. The dashboard is deployed on
+        <a href="https://noman-aqi-predictor.streamlit.app/" style="color:var(--accent2);">Streamlit Community Cloud</a>.
+      </p>
+    </section>
+
+    <!-- ARCHITECTURE -->
+    <section id="architecture">
+      <h2>2. System Architecture</h2>
+      <div class="diagram">
+        <div class="node api">Open-Meteo<br>Air Quality API</div>
+        <span class="arrow">→</span>
+        <div class="node">feature_pipeline.py<br><small>hourly</small></div>
+        <span class="arrow">→</span>
+        <div class="node primary">Hopsworks<br>Feature Store</div>
+        <span class="arrow">→</span>
+        <div class="node">training_pipeline.py<br><small>daily</small></div>
+        <span class="arrow">→</span>
+        <div class="node primary">Hopsworks<br>Model Registry</div>
+        <span class="arrow">→</span>
+        <div class="node">streamlit_app.py<br><small>dashboard</small></div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card">
+          <h4>Data Ingestion</h4>
+          <p>Open-Meteo provides PM2.5, PM10, gases, and US AQI — no API key required.</p>
+        </div>
+        <div class="card">
+          <h4>Feature Store</h4>
+          <p>Hopsworks <code>aqi_features</code> v2 stores versioned hourly records with calendar features.</p>
+        </div>
+        <div class="card">
+          <h4>ML Training</h4>
+          <p>Seven regressors trained daily; best by R² saved as <code>aqi_predictor</code> in Model Registry.</p>
+        </div>
+        <div class="card">
+          <h4>Dashboard</h4>
+          <p>Streamlit UI with Plotly charts, live AQI, forecasts, and model explainability (SHAP/LIME).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODEL PERFORMANCE -->
+    <section id="models">
+      <h2>3. Model Performance</h2>
+      <p>
+        All seven models were trained on <strong>8,795</strong> samples and evaluated on
+        <strong>1,759</strong> held-out test records (80/20 split). Models are ranked by
+        coefficient of determination (R²).
+      </p>
+
+      <h3>R² Score Comparison</h3>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label winner">★ XGBRegressor</span>
+          <div class="bar-track"><div class="bar-fill best" style="width:93.8%"></div></div>
+          <span class="bar-val">93.8%</span>
+        </div>
+      <div class="bar-chart">
+        <div class="bar-row">
+          <span class="bar-label winner">Extra Trees</span>
+          <div class="bar-track"><div class="bar-fill best" style="width:93.7%"></div></div>
+          <span class="bar-val">93.7%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Random Forest</span>
+          <div class="bar-track"><div class="bar-fill" style="width:91.5%"></div></div>
+          <span class="bar-val">91.5%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">CatBoost</span>
+          <div class="bar-track"><div class="bar-fill" style="width:90.8%"></div></div>
+          <span class="bar-val">90.8%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Gradient Boosting</span>
+          <div class="bar-track"><div class="bar-fill" style="width:84.9%"></div></div>
+          <span class="bar-val">84.9%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">K-Nearest Neighbors</span>
+          <div class="bar-track"><div class="bar-fill" style="width:70.0%"></div></div>
+          <span class="bar-val">70.0%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Ridge Regression</span>
+          <div class="bar-track"><div class="bar-fill" style="width:68.2%"></div></div>
+          <span class="bar-val">68.2%</span>
+        </div>
+      </div>
+
+      <table>
+        <tr><th>Rank</th><th>Model</th><th>R²</th><th>RMSE</th><th>MAE</th><th>Algorithm</th></tr>
+        <tr><td>1 ★</td><td class="winner">XGBRegressor</td><td>0.9381</td><td>12</td><td>8.54</td><td><code>XGBRegressor</code></td></tr>
+        <tr><td>1</td><td>Extra Trees</td><td>0.9373</td><td>12.07</td><td>8.18</td><td><code>ExtraTreesRegressor</code></td></tr>
+        <tr><td>2</td><td>Random Forest</td><td>0.9151</td><td>14.04</td><td>9.66</td><td><code>RandomForestRegressor</code></td></tr>
+        <tr><td>2</td><td>CatBoost</td><td>0.9079</td><td>14.63</td><td>10.98</td><td><code>CatBoostRegressor</code></td></tr>
+        <tr><td>3</td><td>Gradient Boosting</td><td>0.8488</td><td>18.74</td><td>14.11</td><td><code>GradientBoostingRegressor</code></td></tr>
+        <tr><td>4</td><td>K-Nearest Neighbors</td><td>0.6997</td><td>26.41</td><td>19.84</td><td><code>KNeighborsRegressor</code></td></tr>
+        <tr><td>5</td><td>Ridge Regression</td><td>0.6819</td><td>27.19</td><td>20.98</td><td><code>Ridg</code></td></tr>
+      </table>
+    </section>
+
+    <!-- EXPLAINABILITY -->
+    <section id="explainability">
+      <h2>4. Model Explainability</h2>
+      <p>
+        The training pipeline generates SHAP (global) and LIME (local) explanations via
+        <code>explainability.py</code>, stored in <code>metrics.json</code> and surfaced on the
+        Model Stats dashboard page.
+      </p>
+
+      <div class="two-col">
+        <div>
+          <h3>SHAP — Global Feature Importance</h3>
+          <p>Mean absolute SHAP values on 120 test samples (XGBRegressor). Base prediction: <strong>120.75 AQI</strong>.</p>
+          <div class="bar-chart">
+            <div class="bar-row"><span class="bar-label">Month</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><span class="bar-val">13.24</span></div>
+            <div class="bar-row"><span class="bar-label">PM2.5</span><div class="bar-track"><div class="bar-fill" style="width:60.9%"></div></div><span class="bar-val">8.06</span></div>
+            <div class="bar-row"><span class="bar-label">Day</span><div class="bar-track"><div class="bar-fill" style="width:41.6%"></div></div><span class="bar-val">5.50</span></div>
+            <div class="bar-row"><span class="bar-label">Hour</span><div class="bar-track"><div class="bar-fill" style="width:30.5%"></div></div><span class="bar-val">4.04</span></div>
+            <div class="bar-row"><span class="bar-label">Ozone</span><div class="bar-track"><div class="bar-fill" style="width:25.2%"></div></div><span class="bar-val">3.33</span></div>
+            <div class="bar-row"><span class="bar-label">SO₂</span><div class="bar-track"><div class="bar-fill" style="width:16.7%"></div></div><span class="bar-val">2.22</span></div>
+            <div class="bar-row"><span class="bar-label">AQI Δ rate</span><div class="bar-track"><div class="bar-fill" style="width:13.3%"></div></div><span class="bar-val">1.76</span></div>
+            <div class="bar-row"><span class="bar-label">Day of week</span><div class="bar-track"><div class="bar-fill" style="width:10.3%"></div></div><span class="bar-val">1.36</span></div>
+            <div class="bar-row"><span class="bar-label">PM10</span><div class="bar-track"><div class="bar-fill" style="width:11.2%"></div></div><span class="bar-val">1.49</span></div>
+            <div class="bar-row"><span class="bar-label">NO₂</span><div class="bar-track"><div class="bar-fill" style="width:5.5%"></div></div><span class="bar-val">0.73</span></div>
+            <div class="bar-row"><span class="bar-label">CO</span><div class="bar-track"><div class="bar-fill" style="width:3%"></div></div><span class="bar-val">0.40</span></div>
+          </div>
+        </div>
+        <div>
+          <h3>LIME — Local Explanation</h3>
+          <p>Sample prediction: <strong>98.0 AQI</strong> (intercept 132.74). Top contributing factors:</p>
+          <table>
+            <tr><th>Feature</th><th>Weight</th><th>Direction</th></tr>
+            <tr><td>Month (Mar–Apr)</td><td>−26.94</td><td style="color:var(--good)">↓ lowers AQI</td></tr>
+            <tr><td>PM2.5 ≤ 25.5</td><td>−9.91</td><td style="color:var(--good)">↓ lowers AQI</td></tr>
+            <tr><td>Day ≤ 8</td><td>+4.32</td><td style="color:var(--danger)">↑ raises AQI</td></tr>
+            <tr><td>Ozone 85–144</td><td>+2.57</td><td style="color:var(--danger)">↑ raises AQI</td></tr>
+            <tr><td>SO₂ ≤ 8.6</td><td>−2.10</td><td style="color:var(--good)">↓ lowers AQI</td></tr>
+            <tr><td>Hour 6–12</td><td>+1.43</td><td style="color:var(--danger)">↑ raises AQI</td></tr>
+          </table>
+          <p style="font-size:0.84rem;color:var(--muted);margin-top:0.5rem;">
+            Seasonality (month) and PM2.5 are the strongest drivers of AQI predictions.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PIPELINES -->
+    <section id="pipelines">
+      <h2>5. Data &amp; ML Pipelines</h2>
+      <div class="flow">┌──────────────────────────────────────────────────────────────────────┐
+│                    AQI-PREDICTOR PIPELINE FLOW                        │
+└──────────────────────────────────────────────────────────────────────┘
+
+  [1] BACKFILL (one-time)          backfill.py
+        └─► Open-Meteo hourly (365 days) → Hopsworks aqi_features v2
+
+  [2] FEATURE PIPELINE (hourly)    feature_pipeline.py  ← GitHub Actions
+        └─► Open-Meteo current snapshot → append 1 row to feature store
+
+  [3] TRAINING PIPELINE (daily)    training_pipeline.py  ← GitHub Actions
+        └─► Read features → train 7 models → save best → Model Registry
+
+  [4] DASHBOARD (continuous)       streamlit_app.py
+        └─► Load model + features → 7-day forecast → 10 interactive pages</div>
+
+      <table>
+        <tr><th>Script</th><th>Schedule</th><th>Purpose</th></tr>
+        <tr><td><code>backfill.py</code></td><td>Manual (once)</td><td>Seed 365 days of hourly historical AQI data.</td></tr>
+        <tr><td><code>feature_pipeline.py</code></td><td>Every hour (UTC)</td><td>Ingest current pollution readings into Hopsworks.</td></tr>
+        <tr><td><code>training_pipeline.py</code></td><td>Daily at 06:00 UTC</td><td>Retrain models, pick best by R², upload artifacts.</td></tr>
+        <tr><td><code>explainability.py</code></td><td>During training</td><td>Compute SHAP/LIME reports for the winning model.</td></tr>
+        <tr><td><code>streamlit_app.py</code></td><td>On demand / hosted</td><td>Interactive dashboard for monitoring and forecasts.</td></tr>
+      </table>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard">
+      <h2>6. Streamlit Dashboard</h2>
+      <p>
+        The dashboard runs at
+        <a href="https://noman-aqi-predictor.streamlit.app/" style="color:var(--accent2);">noman-aqi-predictor.streamlit.app</a>
+        (Python 3.12 on Streamlit Community Cloud). Entry point:
+        <code>app/streamlit_app.py</code>.
+      </p>
+      <table>
+        <tr><th>Page</th><th>Description</th></tr>
+        <tr><td>Overview</td><td>Live AQI hero, health alert, next-3-day forecast, 7-model comparison, pollutants, 24h trend.</td></tr>
+        <tr><td>Hourly AQI</td><td>Hourly averages and time-series charts.</td></tr>
+        <tr><td>Daily AQI</td><td>Daily aggregates, monthly trends, category distribution.</td></tr>
+        <tr><td>Forecast</td><td>Full 7-day predicted AQI with confidence band.</td></tr>
+        <tr><td>Charts</td><td>AQI by hour of day, day of week, 90-day rolling trend.</td></tr>
+        <tr><td>Pollutants</td><td>PM2.5, PM10, O₃, NO₂, CO, SO₂ vs WHO limits.</td></tr>
+        <tr><td>Heatmap</td><td>AQI intensity heatmap over time.</td></tr>
+        <tr><td>Model Stats</td><td>All 7 models ranked; SHAP/LIME explainability.</td></tr>
+        <tr><td>Health Guide</td><td>AQI category health recommendations.</td></tr>
+        <tr><td>Data History</td><td>Raw feature table and export view.</td></tr>
+      </table>
+
+      <h3>US AQI Categories</h3>
+      <table>
+        <tr><th>Range</th><th>Category</th><th>Health Impact</th></tr>
+        <tr><td>0–50</td><td style="color:var(--good)">Good</td><td>Air quality is satisfactory.</td></tr>
+        <tr><td>51–100</td><td style="color:#a3e635">Moderate</td><td>Acceptable; sensitive groups may experience minor issues.</td></tr>
+        <tr><td>101–150</td><td style="color:var(--warn)">Unhealthy for Sensitive Groups</td><td>Children, elderly, and those with respiratory conditions at risk.</td></tr>
+        <tr><td>151–200</td><td style="color:#fb923c">Unhealthy</td><td>Everyone may begin to experience health effects.</td></tr>
+        <tr><td>201–300</td><td style="color:var(--danger)">Very Unhealthy</td><td>Health alert — significant health effects for all.</td></tr>
+        <tr><td>301+</td><td style="color:#dc2626">Hazardous</td><td>Emergency conditions — entire population likely affected.</td></tr>
+      </table>
+    </section>
+
+    <!-- CI/CD -->
+    <section id="cicd">
+      <h2>7. CI/CD &amp; Deployment</h2>
+      <table>
+        <tr><th>Workflow</th><th>Schedule</th><th>Script</th><th>Timeout</th></tr>
+        <tr><td><code>feature_pipeline.yml</code></td><td><code>0 * * * *</code> (hourly UTC)</td><td><code>feature_pipeline.py</code></td><td>20 min</td></tr>
+        <tr><td><code>train_pipeline.yml</code></td><td><code>0 6 * * *</code> (daily 06:00 UTC)</td><td><code>training_pipeline.py</code></td><td>60 min</td></tr>
+      </table>
+      <p>Both workflows run on <strong>ubuntu-latest</strong> with Python 3.12 and support manual triggers via <code>workflow_dispatch</code>.</p>
+
+      <h3>Required Secrets</h3>
+      <table>
+        <tr><th>Secret</th><th>Required</th><th>Description</th></tr>
+        <tr><td><code>HOPSWORKS_API_KEY</code></td><td>Yes</td><td>Hopsworks API key for feature store and model registry.</td></tr>
+        <tr><td><code>HOPSWORKS_PROJECT_NAME</code></td><td>Yes</td><td>Hopsworks project name.</td></tr>
+        <tr><td><code>FEATURE_GROUP_NAME</code></td><td>YES</td><td>Hopsworks feature group name.</td></tr>
+        <tr><td><code>FEATURE_GROUP_VERSION</code></td><td>YES</td><td>Hopsworks feature group version.</td></tr>
+        
+      </table>
+    </section>
+
+    <!-- TECH STACK -->
+    <section id="tech">
+      <h2>8. Technology Stack</h2>
+      <table>
+        <tr><th>Component</th><th>Technology</th><th>Role</th></tr>
+        <tr><td>Language</td><td>Python 3.12</td><td>All pipelines and dashboard (not 3.14 — protobuf/Hopsworks incompatible).</td></tr>
+        <tr><td>Data API</td><td>Open-Meteo Air Quality</td><td>Free, no-key pollution and AQI data.</td></tr>
+        <tr><td>Feature Store</td><td>Hopsworks 4.7.5</td><td>Versioned features and model registry at eu-west.cloud.hopsworks.ai.</td></tr>
+        <tr><td>ML</td><td>scikit-learn</td><td>Seven regression models; 80/20 train/test split.</td></tr>
+        <tr><td>Explainability</td><td>SHAP + LIME</td><td>Global and local prediction explanations.</td></tr>
+        <tr><td>Dashboard</td><td>Streamlit 1.32+</td><td>Interactive web UI with Plotly charts.</td></tr>
+        <tr><td>CI/CD</td><td>GitHub Actions</td><td>Scheduled hourly ingestion and daily retraining.</td></tr>
+        <tr><td>Hosting</td><td>Streamlit Community Cloud</td><td>Public dashboard deployment.</td></tr>
+      </table>
+    </section>
+
+    <!-- REPO STRUCTURE -->
+    <section id="structure">
+      <h2>9. Repository Structure</h2>
+      <pre>AQI-Predictor/
+├── app/app/streamlit_app.py     # Dashboard (main entry point)
+├── backfill.py                  # One-time 365-day historical load
+├── feature_pipeline.py          # Hourly AQI ingestion
+├── training_pipeline.py         # Daily model training
+├── explainability.py            # SHAP &amp; LIME reports
+├── model/
+│   ├── best_model.pkl           # Winning estimator
+│   └── metrics.json             # All model scores + explainability
+├── .github/workflows/
+│   ├── feature_pipeline.yml     # Hourly CI
+│   └── train_pipeline.yml       # Daily CI
+├── requirements.txt             # Linux / CI dependencies
+├── requirements-explain.txt     # SHAP + LIME extras
+└── report.html                  # This project report</pre>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <h2>10. Feature Schema &amp; Training Inputs</h2>
+      <table>
+        <tr><th>Feature</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>timestamp</code>, <code>city</code></td><td>PK</td><td>Primary keys for the feature group.</td></tr>
+        <tr><td><code>hour</code>, <code>day</code>, <code>month</code>, <code>day_of_week</code></td><td>int</td><td>Calendar / cyclical time features.</td></tr>
+        <tr><td><code>pm2_5</code>, <code>pm10</code></td><td>float</td><td>Particulate matter (µg/m³).</td></tr>
+        <tr><td><code>carbon_monoxide</code>, <code>nitrogen_dioxide</code></td><td>float</td><td>CO and NO₂ concentrations.</td></tr>
+        <tr><td><code>ozone</code>, <code>sulphur_dioxide</code></td><td>float</td><td>O₃ and SO₂ concentrations.</td></tr>
+        <tr><td><code>us_aqi</code></td><td>float</td><td>Target variable (US AQI index).</td></tr>
+        <tr><td><code>aqi_change_rate</code></td><td>float</td><td>Hour-over-hour AQI delta.</td></tr>
+      </table>
+    </section>
+
+    <!-- QUICK START -->
+    <section id="setup">
+      <h2>11. Quick Start</h2>
+      <pre># Windows
+python -m venv venv
+venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+pip install -r requirements-explain.txt
+
+# One-time setup
+python backfill.py
+python training_pipeline.py
+
+# Launch dashboard
+streamlit run app/streamlit_app.py</pre>
+      <p>
+        Configure a <code>.env</code> file with <code>HOPSWORKS_API_KEY</code>,<code>HOPSWORKS_PROJECT_NAME</code>,<code>FEATURE_GROUP_NAME</code> and
+        <code>FEATURE_GROUP_VERSION</code> before running pipelines.
+      </p>
+    </section>
+
+    <footer>
+      <p><strong>AQI-Predictor</strong> — Project Report · Generated September 2026</p>
+      <p>
+        Data: <a href="https://open-meteo.com/">Open-Meteo</a> ·
+        Platform: <a href="https://www.hopsworks.ai/">Hopsworks</a> ·
+        UI: <a href="https://streamlit.io/">Streamlit</a> ·
+        CI/CD: <a href="https://docs.github.com/en/actions">GitHub Actions</a> ·
+        Live: <a href="https://maida-aqi-predictor.streamlit.app/">Dashboard</a>
+      </p>
+    </footer>
+
+  </div>
+</body>
+</html>
